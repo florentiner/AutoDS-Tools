@@ -46,7 +46,7 @@ fi
 
 # Build the base image + every family image referenced by the present tasks.
 families="$(for d in harbor/tasks/*/; do
-  [ -f "$d/task.toml" ] && sed -nE 's/^\s*family\s*=\s*"([^"]+)".*/\1/p' "$d/task.toml"
+  [ -f "$d/task.toml" ] && sed -nE 's/^[[:space:]]*family[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' "$d/task.toml"
 done | sort -u | tr '\n' ' ')"
 echo ">> building images: base ${families:-tabular}"
 bash harbor/environments/build.sh ${families:-tabular}
