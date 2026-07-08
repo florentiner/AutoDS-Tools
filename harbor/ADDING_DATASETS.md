@@ -94,6 +94,30 @@ harbor run -d "<org>/<dataset>@<version>" \
 
 ---
 
+## C. Run locally in venvs (no Docker)
+
+If you don't want Docker/Harbor, run tasks directly in Python venvs. This
+provisions a framework venv (autods + autods-harbor) and a per-family child venv
+(the specialized libs), prepares/downloads the data, runs the agent, and scores —
+one task at a time. Outputs land in `./runs/<task>/` (no hub trace).
+
+```bash
+# add a dataset, then run it:
+cp -r harbor/tasks/_template harbor/tasks/my-task     # fill in the TODOs
+AUTODS_MODEL=gemma-4-31b-it \
+AUTODS_API_KEY=sk-your-llm-key \
+AUTODS_BASE_URL=https://openrouter.ai/api/v1 \
+bash harbor/run_all_local.sh my-task                  # or no arg = every task
+
+cat runs/my-task/reward.json          # the score
+cat runs/my-task/autods_trace.json    # the AutoDS trace
+```
+
+Needs `python3.12` on PATH. To score against real competition data set
+`MLAB_USE_KAGGLE=1` + `KAGGLE_USERNAME`/`KAGGLE_KEY`.
+
+---
+
 ## See the trace on the hub
 
 Every trial writes an ATIF `trajectory.json`, so `harbor upload` renders the run

@@ -110,6 +110,17 @@ environment:
 uv tool install harbor --with ./apps/harbor
 ```
 
+### Run every task (batch)
+
+```bash
+# via Harbor/Docker (builds images, runs each task, optional hub upload):
+AUTODS_MODEL=... AUTODS_API_KEY=... AUTODS_BASE_URL=... \
+UPLOAD=1 HARBOR_API_KEY=sk-harbor-... bash harbor/run_all.sh
+
+# OR locally in venvs, no Docker (per-task outputs under ./runs/, no hub trace):
+AUTODS_MODEL=... AUTODS_API_KEY=... AUTODS_BASE_URL=... bash harbor/run_all_local.sh
+```
+
 ### API keys
 
 - **LLM** (`AUTODS_API_KEY` / `AUTODS_BASE_URL` / `AUTODS_MODEL`): any
