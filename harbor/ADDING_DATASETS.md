@@ -133,15 +133,18 @@ HARBOR_API_KEY=sk-harbor-... harbor publish \
 # -> https://hub.harborframework.com/datasets/<org>/<name>
 ```
 
-Then "use after adding" — run it straight from the registry with `-d`:
+Then "use after adding" — run it from the registry and **auto-upload the trace**
+with `--upload` (one command, no separate upload step):
 
 ```bash
+export HARBOR_API_KEY=sk-harbor-...        # enables --upload
 harbor run -d <org>/<name> -a autods_harbor.agent:AutoDSAgent -m gemma-4-31b-it \
   --ae AUTODS_MODEL=gemma-4-31b-it \
   --ae AUTODS_API_KEY=sk-your-llm-key \
   --ae AUTODS_BASE_URL=https://openrouter.ai/api/v1 \
-  -o "$HOME/harbor-jobs"
-HARBOR_API_KEY=sk-harbor-... harbor upload "$HOME/harbor-jobs/<job>"   # -> hub trace URL
+  -o "$HOME/harbor-jobs" \
+  --upload                                  # prints https://hub.harborframework.com/jobs/<id>
+  # add --public to make the uploaded job shareable
 ```
 
 > Portability note: the published tasks' `environment/Dockerfile` is
@@ -153,10 +156,14 @@ HARBOR_API_KEY=sk-harbor-... harbor upload "$HOME/harbor-jobs/<job>"   # -> hub 
 
 ## See the trace on the hub
 
-Every trial writes an ATIF `trajectory.json`, so `harbor upload` renders the run
-(steps, tool calls, tokens, cost, reward) just like a pre-installed dataset:
+Every trial writes an ATIF `trajectory.json`, so the run renders on the hub
+(steps, tool calls, tokens, cost, reward) like a pre-installed dataset. Two ways:
 
 ```bash
+# automatic — add --upload to `harbor run` (needs HARBOR_API_KEY):
+harbor run ... --upload                # prints the hub URL when the job finishes
+
+# after the fact — upload a finished job dir:
 HARBOR_API_KEY=sk-harbor-... harbor upload "$HOME/harbor-jobs/<job-timestamp>"
 # -> https://hub.harborframework.com/jobs/<id>   (private; add --public to share)
 ```
