@@ -58,6 +58,14 @@ for t in $TASKS; do
   tdir="harbor/tasks/$t"
   [ -f "$tdir/task.toml" ] || { echo "!! skip $t (no task.toml)"; continue; }
   echo ">> running $t"
+  # UPLOAD=1 adds Harbor's native --upload so the trace auto-lands on the hub
+  # after each run (needs HARBOR_API_KEY). PUBLIC=1 makes it shareable.
+  upload_flags=()
+  if [ "${UPLOAD:-0}" = "1" ]; then
+    : "${HARBOR_API_KEY:?set HARBOR_API_KEY (sk-harbor-...) to use UPLOAD=1}"
+    upload_flags+=(--upload)
+    [ "${PUBLIC:-0}" = "1" ] && upload_flags+=(--public)
+  fi
   harbor run \
     -p "$tdir" \
     -a "$AGENT" \
@@ -67,15 +75,7 @@ for t in $TASKS; do
     --ae AUTODS_BASE_URL="$AUTODS_BASE_URL" \
     --ae RESEARCH_DISABLED="${RESEARCH_DISABLED:-1}" \
     ${MLAB_USE_KAGGLE:+--ek MLAB_USE_KAGGLE="$MLAB_USE_KAGGLE"} \
-    -o "$JOBS_DIR" -n 1 -y || echo "!! $t run failed"
+    -o "$JOBS_DIR" -n 1 -y "${upload_flags[@]}" || echo "!! $t run failed"
 done
-
-if [ "${UPLOAD:-0}" = "1" ]; then
-  : "${HARBOR_API_KEY:?set HARBOR_API_KEY (sk-harbor-...) to upload}"
-  echo ">> uploading jobs to the hub"
-  for job in "$JOBS_DIR"/*/; do
-    [ -f "$job/result.json" ] && harbor upload "$job" || true
-  done
-fi
 
 echo ">> done. Jobs in: $JOBS_DIR"
