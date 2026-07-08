@@ -118,6 +118,39 @@ Needs `python3.12` on PATH. To score against real competition data set
 
 ---
 
+## D. Publish a dataset to the hub, then run it from the registry
+
+Bundle tasks into a dataset and publish it (default **private**) so it appears
+under https://hub.harborframework.com/datasets:
+
+```bash
+harbor dataset init <org>/<name> -o harbor/datasets --description "..."
+harbor add harbor/tasks/task-a harbor/tasks/task-b --to harbor/datasets
+# publish the tasks AND the dataset together (the manifest pins task digests,
+# so the tasks must be published for the dataset to resolve):
+HARBOR_API_KEY=sk-harbor-... harbor publish \
+  harbor/tasks/task-a harbor/tasks/task-b harbor/datasets --private
+# -> https://hub.harborframework.com/datasets/<org>/<name>
+```
+
+Then "use after adding" — run it straight from the registry with `-d`:
+
+```bash
+harbor run -d <org>/<name> -a autods_harbor.agent:AutoDSAgent -m gemma-4-31b-it \
+  --ae AUTODS_MODEL=gemma-4-31b-it \
+  --ae AUTODS_API_KEY=sk-your-llm-key \
+  --ae AUTODS_BASE_URL=https://openrouter.ai/api/v1 \
+  -o "$HOME/harbor-jobs"
+HARBOR_API_KEY=sk-harbor-... harbor upload "$HOME/harbor-jobs/<job>"   # -> hub trace URL
+```
+
+> Portability note: the published tasks' `environment/Dockerfile` is
+> `FROM autods-mlab-<family>` (a locally-built image). Build it first on whatever
+> machine runs the dataset (`harbor/environments/build.sh tabular`), or change the
+> base to a registry-hosted image so anyone can run the dataset without building.
+
+---
+
 ## See the trace on the hub
 
 Every trial writes an ATIF `trajectory.json`, so `harbor upload` renders the run

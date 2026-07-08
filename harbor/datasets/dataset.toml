@@ -1,0 +1,20 @@
+# Dataset manifest for autods-mlab/mlab-tabular
+# Add tasks using: harbor add <org>/<name>
+# Publish using: harbor publish
+
+[dataset]
+name = "autods-mlab/mlab-tabular"
+description = "AutoDS MLAB tabular tasks (LightAutoML)"
+keywords = []
+[[dataset.authors]]
+name = "AutoDS"
+
+
+[[tasks]]
+name = "autods-mlab/spaceship-titanic"
+digest = "sha256:460f0ab55ebbffc2b5490896878fda18b233e24665617e247cea9cfb11cc9177"
+
+[[tasks]]
+name = "autods-mlab/house-price"
+digest = "sha256:be3cad676d7139c2e0392d07be8ab508158570817b70e879f39a81b87551a0ac"
+
