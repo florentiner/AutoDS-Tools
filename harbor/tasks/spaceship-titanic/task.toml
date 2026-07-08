@@ -1,0 +1,31 @@
+schema_version = "1.3"
+artifacts = ["/workspace/submission.csv"]
+
+[task]
+name = "autods-mlab/spaceship-titanic"
+description = "MLAgentBench Spaceship Titanic — tabular binary classification (LightAutoML)"
+keywords = ["mlab", "mlagentbench", "tabular", "classification", "lightautoml", "autods"]
+[[task.authors]]
+name = "AutoDS"
+
+[metadata]
+family = "tabular"
+metric = "accuracy"
+specialized_libraries = ["lightautoml", "featuretools", "feature-engine"]
+
+[verifier]
+timeout_sec = 1200.0
+collect = []
+[verifier.env]
+
+[agent]
+timeout_sec = 3600.0
+
+[environment]
+network_mode = "public"
+build_timeout_sec = 1800.0
+os = "linux"
+mcp_servers = []
+[environment.env]
+
+[solution.env]

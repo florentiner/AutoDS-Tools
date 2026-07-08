@@ -1,0 +1,29 @@
+[project]
+name = "autods-harbor"
+version = "0.1.0"
+description = "Harbor agent adapter for AutoDS (ATIF traces) + MLAB/TabReD tasks"
+requires-python = ">=3.12"
+# Intentionally dependency-free: the two execution contexts provide different
+# libraries and must not be resolved together (harbor's deps conflict with the
+# autods workspace, e.g. cognee via pygrad).
+#  * Host (harbor process, `harbor run -a autods_harbor.agent:AutoDSAgent`):
+#    needs only `harbor` (already in the harbor tool env) + stdlib. Modules used
+#    here — agent.py, atif.py, constants.py — import `harbor.*` only.
+#    Install with:  uv tool install harbor --with ./apps/harbor
+#  * Container (the `autods-harbor` entrypoint): needs `autods` + langchain,
+#    installed from the workspace source in the task base image. Modules used
+#    here — entrypoint.py, usage.py — import `autods` / langchain only.
+dependencies = []
+
+[project.scripts]
+autods-harbor = "autods_harbor.entrypoint:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/autods_harbor"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/autods_harbor/**", "tests/**"]

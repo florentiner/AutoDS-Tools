@@ -6,7 +6,6 @@ from typing import Iterable
 
 from langchain.tools import tool
 
-import pygrad as pg
 from autods.environments.sandbox import LocalSandboxAdapter, SandboxResult, describe_exit_code
 
 MODEL_FORMAT_MAX_BYTES = 10 * 1024
@@ -179,6 +178,12 @@ def create_run_python_tool(
 
 
 def create_libq_search_tool():
+    # pygrad (GRAD doc-retrieval) is an optional dependency (extra: "libq"). It
+    # pulls a heavy stack (cognee/neo4j), so it is imported lazily here and only
+    # when libq is enabled — Harbor task images run with LIBQ_DISABLED=1 and omit
+    # it entirely. See pipeline.build_pipeline's env_bool("LIBQ_DISABLED") guard.
+    import pygrad as pg
+
     @tool("libq_search")
     async def libq_search(github_url: str, query: str) -> str:
         """Search library documentation and examples with libq."""

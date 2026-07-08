@@ -1,0 +1,23 @@
+# TabReD family — tabular AutoML + tabular deep-learning (CPU-only).
+# TabReD's finding: under temporal splits GBDT and simple MLP-like tabular-DL
+# win, so we bake LightAutoML (GBDT/linear/NN AutoML) alongside the RTDL/TabM
+# MLP family. Alternatives (AutoGluon, sktime) are pip-installable at task time.
+
+# Primary AutoML (wraps CatBoost/LightGBM/XGBoost + linear + NN).
+lightautoml
+
+# Tabular deep-learning stack (MLP-PLR / FT-Transformer).
+pytorch-tabular
+rtdl-revisiting-models
+rtdl-num-embeddings
+pytorch-frame
+# TabM (Yandex's parameter-efficient MLP ensemble) is not on PyPI; install at
+# task time when needed:  pip install "tabm @ git+https://github.com/yandex-research/tabm"
+
+# Feature engineering + core stack.
+featuretools
+feature-engine
+category_encoders
+scikit-learn
+pandas
+numpy<2

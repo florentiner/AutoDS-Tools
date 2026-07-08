@@ -1,0 +1,34 @@
+schema_version = "1.3"
+# Files collected from the environment after the run (for the hub / analysis).
+artifacts = ["/workspace/submission.csv"]
+
+[task]
+name = "your-org/your-task"                     # TODO
+description = "One-line description of the task" # TODO
+keywords = ["autods", "tabular"]                # TODO
+[[task.authors]]
+name = "Your Name"                              # TODO
+
+[metadata]
+# `family` selects the base image the environment/Dockerfile should FROM.
+# Built by harbor/environments/build.sh (base + this family).
+family = "tabular"                              # tabular|nlp|vision|graph|clrs|numeric|base
+metric = "accuracy"                             # TODO: how tests/ scores it
+specialized_libraries = ["lightautoml"]         # TODO: named in instruction.md
+
+[verifier]
+timeout_sec = 1200.0
+collect = []
+[verifier.env]
+
+[agent]
+timeout_sec = 3600.0
+
+[environment]
+network_mode = "public"      # AutoDS needs LLM egress during the agent phase
+build_timeout_sec = 1800.0
+os = "linux"
+mcp_servers = []
+[environment.env]
+
+[solution.env]

@@ -29,6 +29,7 @@ members = [
     "packages/pygrad",
     "apps/server",
     "apps/cli",
+    "apps/harbor",
 ]
 
 [tool.ruff]
@@ -50,7 +51,10 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["autods", "autods_cli", "autods_web", "pygrad"]
+known-first-party = ["autods", "autods_cli", "autods_harbor", "autods_web", "pygrad"]
+# The top-level harbor/ dataset dir would otherwise make ruff treat the external
+# `harbor` package as first-party and reshuffle imports.
+known-third-party = ["harbor"]
 
 [tool.pytest.ini_options]
 testpaths = [
@@ -58,6 +62,7 @@ testpaths = [
     "packages/pygrad/tests",
     "apps/server/tests",
     "apps/cli/tests",
+    "apps/harbor/tests",
 ]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]

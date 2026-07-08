@@ -1,0 +1,26 @@
+# Tabular family — baked primary specialized libraries (CPU-only).
+# Alternatives (AutoGluon, FLAML, sktime, tslearn, statsforecast, Darts,
+# NeuralForecast, polars) are named in the per-task prompts and pip-installable
+# into this venv at task time.
+
+# Primary AutoML: LightAutoML already wraps CatBoost/LightGBM/XGBoost + linear +
+# NN, so those gradient-boosting libraries are not listed separately.
+lightautoml
+
+# Automated feature engineering (relational + interaction features).
+featuretools
+# NOTE: tsfresh (automated time-series feature extraction, used by the
+# amp-parkinsons task) is intentionally NOT baked here — its statsmodels pin
+# conflicts with this image. The amp-parkinsons instruction installs a
+# compatible tsfresh + statsmodels into the venv at task time.
+
+# Classic feature engineering + encoding helpers.
+feature-engine
+# NOTE: category_encoders is NOT baked — its statsmodels dependency conflicts
+# with this image's scipy. Install at task time if you need GLMM/target encoders:
+#   pip install category_encoders "statsmodels>=0.14.2"
+
+# Core stack. numpy<2 for LightAutoML / tsfresh compatibility.
+scikit-learn
+pandas
+numpy<2

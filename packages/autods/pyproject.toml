@@ -21,10 +21,15 @@ dependencies = [
     "platformdirs>=4.4.0",
     "psutil>=7.1.0",
     "pydantic>=2.11.0",
-    "pygrad",
     "pyyaml>=6.0.2",
     "rich>=14.1.0",
 ]
+
+[project.optional-dependencies]
+# GRAD doc-retrieval layer powering the libq_search tool. Heavy (cognee/neo4j),
+# so it is optional: enable with the "libq" extra, or omit it and set
+# LIBQ_DISABLED=1 (as Harbor task images do).
+libq = ["pygrad"]
 
 [build-system]
 requires = ["hatchling"]
