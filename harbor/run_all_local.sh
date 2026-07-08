@@ -44,7 +44,7 @@ if [ ! -x "$FW/bin/autods-harbor" ]; then
   "$FW/bin/pip" install -q "$ROOT/packages/autods" "$ROOT/apps/harbor"
 fi
 
-task_family() { sed -nE 's/^\s*family\s*=\s*"([^"]+)".*/\1/p' "$1/task.toml" | head -1; }
+task_family() { sed -nE 's/^[[:space:]]*family[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' "$1/task.toml" | head -1; }
 
 # --- per-family child venv: specialized libraries -------------------------
 ensure_family_venv() {  # $1=family; prints venv path on stdout
