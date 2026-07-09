@@ -4,6 +4,10 @@ Runs inside the task container (langchain is available; ``harbor`` is not). It i
 attached to the pipeline ``config["callbacks"]`` — the same hook AutoDS already
 uses for its langfuse handler — so it observes every LLM call across all
 sub-agents (analyst/researcher/manager/coder/presenter/debugger).
+
+Cost is computed from ``pricing.compute_cost`` (auto-derived model pricing). Note
+that cost is also recomputed host-side in ``atif`` from the token counts, so it
+populates even when this container image predates the pricing logic.
 """
 
 from __future__ import annotations
@@ -13,25 +17,25 @@ from typing import Any
 
 from langchain_core.callbacks import BaseCallbackHandler
 
-
-def _price_per_1m(env_name: str) -> float | None:
-    raw = os.getenv(env_name)
-    if not raw:
-        return None
-    try:
-        return float(raw)
-    except ValueError:
-        return None
+from autods_harbor.pricing import compute_cost
 
 
 class UsageCallback(BaseCallbackHandler):
-    """Sum input/output/cached tokens (and optional cost) over all LLM calls."""
+    """Sum input/output/cached tokens over all LLM calls and derive cost."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        model: str | None = None,
+        base_url: str | None = None,
+        api_key: str | None = None,
+    ) -> None:
         self.total_input_tokens = 0
         self.total_output_tokens = 0
         self.total_cached_tokens = 0
         self.call_count = 0
+        self._model = model or os.getenv("AUTODS_MODEL")
+        self._base_url = base_url or os.getenv("AUTODS_BASE_URL")
+        self._api_key = api_key or os.getenv("AUTODS_API_KEY")
 
     def _add(self, input_tokens: int, output_tokens: int, cached_tokens: int) -> None:
         self.total_input_tokens += int(input_tokens or 0)
@@ -44,11 +48,7 @@ class UsageCallback(BaseCallbackHandler):
             return False
         details = usage.get("input_token_details") or {}
         cached = details.get("cache_read") or details.get("cache_creation") or 0
-        self._add(
-            usage.get("input_tokens", 0),
-            usage.get("output_tokens", 0),
-            cached,
-        )
+        self._add(usage.get("input_tokens", 0), usage.get("output_tokens", 0), cached)
         return True
 
     def _from_llm_output(self, llm_output: dict[str, Any] | None) -> bool:
@@ -59,16 +59,10 @@ class UsageCallback(BaseCallbackHandler):
             return False
         details = usage.get("prompt_tokens_details") or {}
         cached = details.get("cached_tokens") or 0
-        self._add(
-            usage.get("prompt_tokens", 0),
-            usage.get("completion_tokens", 0),
-            cached,
-        )
+        self._add(usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), cached)
         return True
 
     def on_llm_end(self, response: Any, **kwargs: Any) -> None:
-        # Prefer per-generation usage_metadata (populated by langchain-openai even
-        # when streaming); fall back to the aggregate llm_output block.
         counted = False
         try:
             for generations in getattr(response, "generations", []) or []:
@@ -86,14 +80,14 @@ class UsageCallback(BaseCallbackHandler):
                 pass
 
     def cost_usd(self) -> float | None:
-        in_price = _price_per_1m("AUTODS_PRICE_INPUT_PER_1M")
-        out_price = _price_per_1m("AUTODS_PRICE_OUTPUT_PER_1M")
-        if in_price is None and out_price is None:
-            return None
-        cost = 0.0
-        cost += (self.total_input_tokens / 1_000_000) * (in_price or 0.0)
-        cost += (self.total_output_tokens / 1_000_000) * (out_price or 0.0)
-        return round(cost, 6)
+        return compute_cost(
+            self._model,
+            self._base_url,
+            self._api_key,
+            self.total_input_tokens,
+            self.total_output_tokens,
+            self.total_cached_tokens,
+        )
 
     def final_metrics(self) -> dict[str, Any]:
         return {
