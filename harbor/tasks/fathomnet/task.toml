@@ -1,0 +1,25 @@
+schema_version = "1.3"
+artifacts = ["/workspace/submission.csv"]
+[task]
+name = "autods-mlab/fathomnet"
+description = "MLAgentBench FathomNet (small) — multi-label image classification (timm/torchvision)"
+keywords = ["mlab", "mlagentbench", "image", "vision", "multi-label", "timm", "autods"]
+[[task.authors]]
+name = "AutoDS"
+[metadata]
+family = "vision"
+metric = "micro_f1"
+specialized_libraries = ["timm", "torchvision", "albumentations"]
+[verifier]
+timeout_sec = 1200.0
+collect = []
+[verifier.env]
+[agent]
+timeout_sec = 3600.0
+[environment]
+network_mode = "public"
+build_timeout_sec = 1800.0
+os = "linux"
+mcp_servers = []
+[environment.env]
+[solution.env]
