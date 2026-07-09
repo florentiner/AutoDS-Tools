@@ -14,15 +14,10 @@ and blends **gradient-boosting models (CatBoost / LightGBM / XGBoost), linear
 models and neural nets** with automatic preprocessing — so do **not** hand-roll
 separate boosting models; let LightAutoML do the model selection and blending.
 
-```python
-from lightautoml.automl.presets.tabular_presets import TabularAutoML
-from lightautoml.tasks import Task
-
-task = Task("binary", metric="accuracy")
-automl = TabularAutoML(task=task, timeout=600)
-oof = automl.fit_predict(train_df, roles={"target": "Transported"})
-preds = automl.predict(test_df).data[:, 0]  # probability of Transported=True
-```
+Configure LightAutoML's `TabularAutoML` preset for a **binary-classification**
+task optimizing accuracy, give the `Transported` column the target role, fit on
+the training frame, and predict the probability of `Transported=True` on the test
+frame. Consult the LightAutoML docs for the exact API.
 
 Feature engineering (do this before fitting):
 - Split `Cabin` on "/" into `Deck` / `Cabin_num` / `Side`.

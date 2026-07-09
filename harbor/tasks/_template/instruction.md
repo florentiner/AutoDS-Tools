@@ -13,9 +13,9 @@ Use **<library>** as the primary approach (pre-installed in this environment).
 agent doesn't hand-roll a weaker approach.> You MAY `pip install` and compare
 these alternatives: **<alt1>**, **<alt2>**.
 
-```python
-# Minimal usage sketch of the specialized library
-```
+Describe the approach in prose (name the key classes/functions and how to apply
+them), but do NOT paste an end-to-end solution — leave the implementation to the
+agent.
 
 ## Submission — REQUIRED
 Write predictions to **`/workspace/submission.csv`** with EXACTLY these columns:

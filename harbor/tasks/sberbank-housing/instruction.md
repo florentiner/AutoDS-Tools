@@ -11,19 +11,12 @@ guard against distribution drift.
 - `test.csv` — later-in-time rows to predict, **without** `target`.
 
 ## Specialized library to use — REQUIRED
-Use **LightAutoML** as the primary approach (pre-installed). It handles mixed
-numeric/categorical tabular data and **datetime roles**, and blends
-gradient-boosting + linear + NN models automatically — do not hand-roll separate
-boosting models.
-
-```python
-from lightautoml.automl.presets.tabular_presets import TabularAutoML
-from lightautoml.tasks import Task
-task = Task("reg", metric="mse")
-automl = TabularAutoML(task=task, timeout=600)
-automl.fit_predict(train_df, roles={"target": "target", "datetime": ["timestamp"]})
-preds = automl.predict(test_df).data[:, 0]
-```
+Use **LightAutoML** as the primary approach (pre-installed) — its `TabularAutoML`
+preset for a regression task. It handles mixed numeric/categorical data and
+**datetime roles** and automatically blends gradient-boosting + linear + NN
+models, so do not hand-roll separate boosting models. Give the `target` column
+the target role and the `timestamp` column a datetime role so the model can use
+temporal structure. Consult the LightAutoML docs for the exact API.
 
 Because the split is temporal, **validate on the latest slice of `train.csv`**
 (not a random split). TabReD's strongest models are GBDT and simple MLP-like

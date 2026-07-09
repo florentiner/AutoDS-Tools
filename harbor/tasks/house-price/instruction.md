@@ -13,15 +13,10 @@ tabular AutoML framework that automatically builds and blends gradient-boosting
 models (CatBoost / LightGBM / XGBoost), linear models and neural nets with
 automatic preprocessing — do **not** hand-roll separate boosting models.
 
-```python
-from lightautoml.automl.presets.tabular_presets import TabularAutoML
-from lightautoml.tasks import Task
-
-task = Task("reg", metric="mae")           # regression; also report RMSE/R2
-automl = TabularAutoML(task=task, timeout=600)
-automl.fit_predict(train_df, roles={"target": "SalePrice"})
-preds = automl.predict(test_df).data[:, 0]
-```
+Configure LightAutoML's `TabularAutoML` preset for a **regression** task
+(optimize MAE; also report RMSE/R²), give the `SalePrice` column the target role,
+fit on the training frame, and predict on the test frame. Consult the LightAutoML
+docs for the exact API.
 
 Consider log-transforming `SalePrice` for training (prices are right-skewed) and
 inverse-transforming predictions. The pre-installed **featuretools** /
