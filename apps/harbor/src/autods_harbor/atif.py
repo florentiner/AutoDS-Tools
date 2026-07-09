@@ -9,6 +9,7 @@ writes the canonical ``trajectory.json`` Harbor discovers.
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,8 @@ from harbor.models.trajectories.observation_result import ObservationResult
 from harbor.models.trajectories.step import Step
 from harbor.models.trajectories.tool_call import ToolCall
 from harbor.models.trajectories.trajectory import Trajectory
+
+from autods_harbor.pricing import compute_cost
 
 # Keep any single observation payload from bloating trajectory.json; the hub
 # still renders the head/tail which is what a reviewer reads.
@@ -145,11 +148,23 @@ def build_trajectory(raw: dict[str, Any]) -> Trajectory:
         steps = [Step(step_id=1, source="user", message=raw.get("instruction", ""))]
 
     fm = raw.get("final_metrics") or {}
+    # Recompute cost host-side when the trace didn't carry it (e.g. an older
+    # container image), from token counts + the model's live pricing.
+    total_cost = fm.get("total_cost_usd")
+    if total_cost is None and (fm.get("total_prompt_tokens") or fm.get("total_completion_tokens")):
+        total_cost = compute_cost(
+            raw.get("model_name"),
+            os.getenv("AUTODS_BASE_URL"),
+            os.getenv("AUTODS_API_KEY"),
+            fm.get("total_prompt_tokens") or 0,
+            fm.get("total_completion_tokens") or 0,
+            fm.get("total_cached_tokens") or 0,
+        )
     final_metrics = FinalMetrics(
         total_prompt_tokens=fm.get("total_prompt_tokens"),
         total_completion_tokens=fm.get("total_completion_tokens"),
         total_cached_tokens=fm.get("total_cached_tokens"),
-        total_cost_usd=fm.get("total_cost_usd"),
+        total_cost_usd=total_cost,
         total_steps=len(steps),
     )
 
