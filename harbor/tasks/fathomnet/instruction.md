@@ -10,10 +10,11 @@ image, which categories are present (`label_0`..`label_3`, each 0/1).
 - `test.csv` — `id` only.
 
 ## Specialized library to use — REQUIRED
-This is a multi-label image task — build a small CNN with **torchvision** and/or
-**timm** (pre-installed) with 4 sigmoid outputs (one per category). Do **not**
-flatten pixels into a tabular model. Use **albumentations** for light
-augmentation if helpful. Keep it small and CPU-friendly (tiny model, few epochs).
+This is a multi-label image task. You **MUST** instantiate the backbone from
+**timm** (`timm.create_model(...)`) or **torchvision.models**, with 4 sigmoid
+outputs (one per category) — do **not** hand-roll the network from raw `torch.nn`
+layers or flatten pixels into a tabular model. Use **albumentations** /
+`torchvision.transforms` for augmentation. Keep it small and CPU-friendly.
 
 ## Submission — REQUIRED
 Write predictions to **`/workspace/submission.csv`** with columns:

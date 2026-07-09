@@ -9,13 +9,14 @@ Classify each 32×32 RGB image into one of **5 classes** (`label` 0–4).
 - `test.csv` — `id` only.
 
 ## Specialized library to use — REQUIRED
-This is an image task — build a small **convolutional neural network** with
-**torchvision** and/or **timm** (both pre-installed). Do **not** flatten the
-pixels into a plain tabular/logistic model. Use **albumentations** for light
-augmentation if helpful. Keep it small and CPU-friendly: a tiny CNN (or a small
-`timm` model like a minimal ResNet) trained for only a few epochs on these 32×32
-images is enough. Load the arrays with numpy, convert to tensors, and train with
-torch on CPU.
+This is an image task. You **MUST** instantiate the model from **timm**
+(`timm.create_model(...)`) or **torchvision.models** (e.g. a small ResNet) — do
+**not** hand-roll the network from raw `torch.nn` layers, and do **not** flatten
+the pixels into a tabular/logistic model. A small backbone (set `num_classes=5`,
+`in_chans=3`) trained for a few epochs on these 32×32 images is enough; adapt the
+input size if the model requires it. Use **albumentations** or
+`torchvision.transforms` for light augmentation. Keep it small and CPU-friendly;
+load the arrays with numpy and train with torch on CPU.
 
 ## Submission — REQUIRED
 Write predictions to **`/workspace/submission.csv`** with EXACTLY two columns:
