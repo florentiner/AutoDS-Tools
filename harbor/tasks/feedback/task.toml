@@ -1,0 +1,25 @@
+schema_version = "1.3"
+artifacts = ["/workspace/submission.csv"]
+[task]
+name = "autods-mlab/feedback"
+description = "MLAgentBench Feedback Prize — essay scoring (text regression; transformers/textstat)"
+keywords = ["mlab", "mlagentbench", "text", "nlp", "transformers", "textstat", "autods"]
+[[task.authors]]
+name = "AutoDS"
+[metadata]
+family = "nlp"
+metric = "r2"
+specialized_libraries = ["sentence-transformers", "transformers", "textstat"]
+[verifier]
+timeout_sec = 1200.0
+collect = []
+[verifier.env]
+[agent]
+timeout_sec = 3600.0
+[environment]
+network_mode = "public"
+build_timeout_sec = 1800.0
+os = "linux"
+mcp_servers = []
+[environment.env]
+[solution.env]
