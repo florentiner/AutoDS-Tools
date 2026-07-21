@@ -1,26 +1,28 @@
 #!/usr/bin/env bash
 # Docker-less runner for the full-data MLAB tasks. Lives in the AutoDS fork
-# (installs the agent from this repo's own packages/autods + apps/harbor), and
-# reads the DATA + baseline instruction + scorer from the HF dataset
-# `danil-e/mlab-gpu-fork` (clone it, pass its path as DATA_ROOT).
+# (installs the agent from this repo's packages/autods + apps/harbor) and reads
+# data + the (base) instruction + scorer from the HF dataset
+# `danil-e/harbor-datasets-mlab` (clone it, point DATA_ROOT at it).
 #
-# Split:
-#   HF dataset  -> <task>/data, <task>/score.py, <task>/instruction_base.md
-#   this repo   -> mlab-gpu/tasks/<task>/instruction_c1.md  (autods C1 prompt)
+# One instruction per task: the dataset ships the ORIGINAL (base) instruction.
+# AutoDS appends its C1 specialized-library layer at RUNTIME (c1_prompt.py);
+# baseline disables it with AUTODS_C1_DISABLED=1. No per-task C1 files.
 #
-# Runs inside a GPU container where docker-in-docker is unavailable: it uses
-# plain venvs (agent-brain venv + per-family child venv), GPU torch by default.
+# Runs where docker-in-docker is unavailable: plain venvs (agent-brain venv +
+# per-family child venv), GPU torch by default (TORCH_CPU=1 forces CPU).
 #
 # Usage:
+#   git clone https://huggingface.co/datasets/danil-e/harbor-datasets-mlab ~/mlab-data
+#   export DATA_ROOT=~/mlab-data
 #   export AUTODS_MODEL=... AUTODS_API_KEY=... AUTODS_BASE_URL=...
-#   export DATA_ROOT=/path/to/cloned/mlab-gpu-fork
 #   ./run_venv.sh setup
-#   ./run_venv.sh <task> <base|c1>
+#   ./run_venv.sh <task> <base|c1>          # base = AutoDS without C1
 #   ./run_venv.sh all
+#
+# Full-data tasks: amp-parkinsons feedback fathomnet identify-contrails
 set -euo pipefail
-HERE="$(cd "$(dirname "$0")" && pwd)"
-REPO="$(cd "$HERE/.." && pwd)"                  # AutoDS repo root (mlab-gpu/ lives under it)
-: "${DATA_ROOT:?set DATA_ROOT to the cloned HF dataset danil-e/mlab-gpu-fork}"
+HERE="$(cd "$(dirname "$0")" && pwd)"; REPO="$(cd "$HERE/.." && pwd)"
+: "${DATA_ROOT:?set DATA_ROOT to the cloned HF dataset danil-e/harbor-datasets-mlab}"
 : "${AUTODS_MODEL:?set AUTODS_MODEL}"; : "${AUTODS_API_KEY:?set AUTODS_API_KEY}"
 : "${AUTODS_BASE_URL:=https://openrouter.ai/api/v1}"
 PY="${PYTHON:-python3}"; AGENT="$HERE/.venv-agent"
@@ -39,11 +41,10 @@ build_agent_venv() {
   "$AGENT/bin/pip" install -q "$REPO/packages/pygrad" fastembed || true
   "$AGENT/bin/autods-harbor" --help >/dev/null 2>&1 || { echo "autods-harbor entrypoint missing" >&2; exit 1; }
 }
-build_family_venv() {  # $1 = family
+build_family_venv() {
   local fam="$1" venv="$HERE/.venv-$fam"; [ -x "$venv/bin/python" ] && return 0
   echo ">> $fam child venv (torch: $([ "${TORCH_CPU:-0}" = 1 ] && echo CPU || echo GPU))"
-  "$PY" -m venv "$venv"
-  "$venv/bin/pip" install -q --upgrade pip wheel "setuptools<81"
+  "$PY" -m venv "$venv"; "$venv/bin/pip" install -q --upgrade pip wheel "setuptools<81"
   local pk; pk="$(torch_pkgs "$fam")"
   if [ "${TORCH_CPU:-0}" = 1 ]; then "$venv/bin/pip" install $pk --index-url https://download.pytorch.org/whl/cpu
   else "$venv/bin/pip" install $pk; fi
@@ -53,26 +54,23 @@ build_family_venv() {  # $1 = family
 run_one() {  # $1=task $2=base|c1
   local task="$1" mode="$2" fam; fam="$(family_of "$task")"
   build_agent_venv; build_family_venv "$fam"
-  local dsrc="$DATA_ROOT/$task"
-  [ -d "$dsrc/data" ] || { echo "no data at $dsrc/data (clone mlab-gpu-fork, set DATA_ROOT)"; exit 1; }
-  # instruction: base from HF dataset; c1 from this repo
-  local inst
-  if [ "$mode" = base ]; then inst="$dsrc/instruction_base.md"
-  else inst="$HERE/tasks/$task/instruction_c1.md"; fi
-  [ -f "$inst" ] || { echo "missing instruction: $inst"; exit 1; }
+  local td="$DATA_ROOT/datasets/mlab-real/$task"
+  [ -d "$td/environment/data" ] || { echo "no data at $td/environment/data (clone harbor-datasets-mlab, set DATA_ROOT)"; exit 1; }
+  local inst="$td/instruction.md"                      # base instruction for BOTH modes
   local run="$HERE/runs/$task-$mode"; rm -rf "$run"; mkdir -p "$run/workspace"
-  cp -R "$dsrc/data/." "$run/workspace/"
+  cp -R "$td/environment/data/." "$run/workspace/"
   echo ">> RUN $task/$mode (family=$fam)  $(date +%H:%M:%S)"
-  local extra=(); [ "$mode" = base ] && extra=(RESEARCH_DISABLED=1 DEBUGGER_DISABLED=1) \
-                                     || extra=(RESEARCH_DISABLED=1 AUTODS_SUBMISSION_GUARD=1)
+  # base = AutoDS without C1 (AUTODS_C1_DISABLED=1); c1 = AutoDS appends its C1 layer at runtime
+  local extra=(RESEARCH_DISABLED=1)
+  [ "$mode" = base ] && extra+=(DEBUGGER_DISABLED=1 AUTODS_C1_DISABLED=1) || extra+=(AUTODS_SUBMISSION_GUARD=1)
   env AUTODS_CHILD_VENV="$HERE/.venv-$fam" \
       AUTODS_MODEL="$AUTODS_MODEL" AUTODS_API_KEY="$AUTODS_API_KEY" AUTODS_BASE_URL="$AUTODS_BASE_URL" \
       "${extra[@]}" \
       "$AGENT/bin/autods-harbor" --instruction-file "$inst" \
         --workspace "$run/workspace" --trace-out "$run/trace.json" 2>&1 | tee "$run/agent.log"
   echo ">> SCORE $task/$mode"
-  "$HERE/.venv-$fam/bin/python" "$dsrc/score.py" \
-      "$run/workspace/submission.csv" "$dsrc/data/answer.csv" | tee "$run/score.txt"
+  "$HERE/.venv-$fam/bin/python" "$td/score.py" \
+      "$run/workspace/submission.csv" "$td/environment/data/answer.csv" | tee "$run/score.txt"
 }
 
 case "${1:-}" in
