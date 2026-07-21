@@ -20,6 +20,7 @@ from harbor.environments.base import BaseEnvironment
 from harbor.models.agent.context import AgentContext
 from harbor.models.trial.paths import EnvironmentPaths
 
+from autods_harbor import c1_prompt
 from autods_harbor.constants import (
     AGENT_LOG_FILENAME,
     DEFAULT_INSTRUCTION_PATH,
@@ -146,6 +147,35 @@ class AutoDSAgent(BaseInstalledAgent):
         env.setdefault("AUTODS_VENV_SYSTEM_SITE_PACKAGES", "1")
         return env
 
+    async def _detect_family(self, environment: BaseEnvironment) -> str:
+        """Best-effort task modality from the staged workspace (AUTODS_FAMILY wins).
+
+        Used only to select the AutoDS C1 (specialized-library) layer; the task's
+        own instruction stays modality-neutral for every other agent.
+        """
+        override = self._get_env("AUTODS_FAMILY")
+        if override:
+            return c1_prompt.normalize_family(override)
+        try:
+            res = await self.exec_as_agent(
+                environment,
+                command=(
+                    "ls -1 /workspace 2>/dev/null; echo '<<<H>>>'; "
+                    "head -1 /workspace/train.csv 2>/dev/null"
+                ),
+            )
+            out = (getattr(res, "stdout", "") or "").lower()
+        except Exception:  # noqa: BLE001 - detection is best-effort
+            return "tabular"
+        files, _, header = out.partition("<<<h>>>")
+        if "node_features.npy" in files or "edges.npy" in files:
+            return "graph"
+        if "_images.npy" in files:
+            return "vision"
+        if "text" in [c.strip() for c in header.split(",")]:
+            return "nlp"
+        return "tabular"
+
     @with_prompt_template
     @override
     async def run(
@@ -154,6 +184,14 @@ class AutoDSAgent(BaseInstalledAgent):
         environment: BaseEnvironment,
         context: AgentContext,
     ) -> None:
+        # AutoDS-only C1 layer: the task ships the ORIGINAL benchmark instruction;
+        # here we append the modality-specific specialized-library + training
+        # discipline blocks so only AutoDS sees them. Skip with AUTODS_C1_DISABLED=1.
+        if not self._get_env("AUTODS_C1_DISABLED"):
+            family = await self._detect_family(environment)
+            instruction = c1_prompt.augment(instruction, family)
+            self.logger.info("AutoDS C1 layer applied (family=%s)", family)
+
         instruction_path = self.logs_dir / "instruction.md"
         instruction_path.write_text(instruction, encoding="utf-8")
         await environment.upload_file(instruction_path, self._REMOTE_INSTRUCTION_PATH.as_posix())
