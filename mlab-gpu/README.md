@@ -29,9 +29,6 @@ its C1 layer itself; `base` mode disables it with `AUTODS_C1_DISABLED=1`.
 
 ```bash
 git clone https://github.com/florentiner/AutoDS-Tools -b mlab-gpu-pub
-git lfs install
-git clone https://huggingface.co/datasets/danil-e/harbor-datasets-mlab ~/mlab-data
-export DATA_ROOT=~/mlab-data
 export AUTODS_MODEL=gemma-4-31b-it AUTODS_API_KEY=sk-or-... \
        AUTODS_BASE_URL=https://openrouter.ai/api/v1
 
@@ -40,6 +37,12 @@ cd AutoDS-Tools/mlab-gpu
 ./run_venv.sh feedback c1      # one task/mode  (base = AutoDS without C1)
 ./run_venv.sh all              # all 4 tasks, baseline + C1
 ```
+
+The runner pulls each task's data straight from HF via `--repo` (like `harbor run
+--repo …`) — **no manual clone needed**. Override the dataset with
+`./run_venv.sh --repo https://huggingface.co/datasets/<owner>/<repo> <task> <mode>`
+(default: `danil-e/harbor-datasets-mlab`). Only the requested task's folder is
+downloaded (so a `feedback` run pulls ~9 MB, not the whole repo).
 
 Per run → `runs/<task>-<mode>/`: `agent.log`, `trace.json`, `workspace/submission.csv`, `score.txt`.
 Both modes read the same base `instruction.md`; `c1` lets AutoDS augment it, `base` sets `AUTODS_C1_DISABLED=1`.
