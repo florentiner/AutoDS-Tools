@@ -1,0 +1,14 @@
+# NLP family — HuggingFace stack (CPU-only). torch is installed separately in the
+# Dockerfile (CPU wheel, 2.2.2), so transformers is pinned to a version
+# compatible with it (newer transformers needs a newer torch). transformers +
+# sentence-transformers are the primary specialized libraries named in the text
+# task prompts (imdb, feedback, ...).
+transformers==4.44.2
+sentence-transformers
+datasets
+textstat
+scikit-learn
+pandas
+numpy<2
+# NOTE: setfit is NOT baked (its transformers pin conflicts); install at task
+# time if you want few-shot contrastive fine-tuning: pip install setfit

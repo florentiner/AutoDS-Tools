@@ -1,0 +1,10 @@
+# Graph family (CPU-only). torch is installed in the Dockerfile (CPU wheel).
+# torch-geometric (PyG) + ogb are the primary specialized libraries named in the
+# graph-task prompts (ogbn-arxiv). PyG 2.x runs basic GNNs without the compiled
+# torch-scatter/torch-sparse extensions.
+torch-geometric
+ogb
+networkx
+scikit-learn
+pandas
+numpy<2

@@ -1,0 +1,12 @@
+# Vision family (CPU-only). torch + torchvision are installed in the Dockerfile
+# (CPU wheels, matched versions). timm + albumentations are the primary
+# specialized libraries named in the image-task prompts (cifar10, fathomnet);
+# segmentation-models-pytorch for identify-contrails.
+timm
+albumentations
+segmentation-models-pytorch
+opencv-python-headless
+pillow
+scikit-learn
+pandas
+numpy<2
