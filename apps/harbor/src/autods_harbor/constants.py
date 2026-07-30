@@ -36,6 +36,8 @@ FORWARDED_ENV_VARS = (
     "AUTODS_DEFAULT_HEADERS_JSON",
     "AUTODS_PRICE_INPUT_PER_1M",
     "AUTODS_PRICE_OUTPUT_PER_1M",
+    # LangGraph super-step budget for long runs.
+    "AUTODS_RECURSION_LIMIT",
     # Pipeline toggles.
     "RESEARCH_DISABLED",
     "LIBQ_DISABLED",

@@ -120,6 +120,15 @@ def _autods_version() -> str:
         return "unknown"
 
 
+def _recursion_limit(default: int = 800) -> int:
+    """LangGraph super-step budget (AUTODS_RECURSION_LIMIT overrides)."""
+    raw = os.getenv("AUTODS_RECURSION_LIMIT")
+    try:
+        return max(1, int(raw)) if raw else default
+    except ValueError:
+        return default
+
+
 async def _run(instruction: str, workspace: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     # Imported here so `--help` stays cheap and import errors surface at run time.
     from autods.autods import _TranscriptRecorder
@@ -132,7 +141,10 @@ async def _run(instruction: str, workspace: Path) -> tuple[list[dict[str, Any]],
     usage = UsageCallback()
 
     config: dict[str, Any] = {
-        "recursion_limit": 200,
+        # LangGraph aborts with GraphRecursionError once this many super-steps run.
+        # Long multi-agent runs on full-size data need headroom; override with
+        # AUTODS_RECURSION_LIMIT.
+        "recursion_limit": _recursion_limit(),
         "configurable": {"thread_id": session.id},
         "callbacks": [usage],
     }

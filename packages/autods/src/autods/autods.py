@@ -1,3 +1,4 @@
+import os
 from __future__ import annotations
 
 import asyncio
@@ -541,7 +542,9 @@ class AutoDS:
             try:
                 recorder.emit("run_started")
                 config: RunnableConfig = {
-                    "recursion_limit": 200,
+                    "recursion_limit": max(
+                        1, int(os.getenv("AUTODS_RECURSION_LIMIT") or 800)
+                    ),
                     "configurable": {"thread_id": session.id},
                     "callbacks":  [langfuse_handler]
                 }
