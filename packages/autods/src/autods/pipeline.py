@@ -1,3 +1,4 @@
+import importlib.util
 import json
 import os
 import subprocess
@@ -445,7 +446,9 @@ def build_pipeline(project_path: str, *, checkpointer: None | bool | BaseCheckpo
         "presenter": [shell_tool,create_submit_report_tool(report_path=report_path_dict["presenter"])]
     }
     
-    if not env_bool("LIBQ_DISABLED"):
+    # libq (GRAD doc-retrieval) needs the optional `pygrad` extra. Skip it when the
+    # extra is absent so the pipeline also runs on images that do not ship it.
+    if not env_bool("LIBQ_DISABLED") and importlib.util.find_spec("pygrad") is not None:
         libq_tool = create_libq_search_tool()
         for _, v in agent2tools.items():
             v.append(libq_tool)
