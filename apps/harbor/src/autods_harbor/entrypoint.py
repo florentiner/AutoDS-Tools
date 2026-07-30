@@ -120,7 +120,7 @@ def _autods_version() -> str:
         return "unknown"
 
 
-def _recursion_limit(default: int = 800) -> int:
+def _recursion_limit(default: int = 200) -> int:
     """LangGraph super-step budget (AUTODS_RECURSION_LIMIT overrides)."""
     raw = os.getenv("AUTODS_RECURSION_LIMIT")
     try:

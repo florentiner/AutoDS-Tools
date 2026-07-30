@@ -114,14 +114,23 @@ class AutoDSAgent(BaseInstalledAgent):
         # Build a uv-managed py3.12 venv and install AutoDS + autods-harbor. The
         # spec is passed via env (never interpolated into the shell) so URL '#'
         # fragments aren't treated as comments; written to a requirements file.
+        # The venv MUST be built on the image's own interpreter when possible: the
+        # task image ships the data-science stack in its system site-packages, and
+        # only a venv derived from that interpreter can see it via
+        # --system-site-packages. A uv-managed Python would expose uv's
+        # site-packages instead, leaving the agent unable to import the task
+        # libraries (it then burns super-steps patching sys.path by hand).
         install = (
             "set -e; "
-            "curl -LsSf https://astral.sh/uv/install.sh | sh; "
-            '. "$HOME/.local/bin/env" 2>/dev/null || export PATH="$HOME/.local/bin:$PATH"; '
-            "uv python install 3.12; "
-            # --system-site-packages: task images ship their own data-science stack
-            # in the system interpreter; the agent venv must be able to import it.
-            f"uv venv {shlex.quote(INSTALL_VENV)} --python 3.12 --seed --system-site-packages; "
+            "if python3 -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)'; then "
+            f"  python3 -m venv --system-site-packages {shlex.quote(INSTALL_VENV)}; "
+            f"  {shlex.quote(INSTALL_VENV + '/bin/python')} -m pip install --quiet --upgrade pip; "
+            "else "
+            "  curl -LsSf https://astral.sh/uv/install.sh | sh; "
+            '  . "$HOME/.local/bin/env" 2>/dev/null || export PATH="$HOME/.local/bin:$PATH"; '
+            "  uv python install 3.12; "
+            f"  uv venv {shlex.quote(INSTALL_VENV)} --python 3.12 --seed; "
+            "fi; "
             # One requirement per line (the spec may list several packages).
             f"printf '%s\\n' \"$AUTODS_INSTALL_SPEC\" | tr ' ' '\\n' | sed '/^$/d' > {shlex.quote(INSTALL_REQUIREMENTS_PATH)}; "
             f"{shlex.quote(INSTALL_VENV + '/bin/pip')} install -r {shlex.quote(INSTALL_REQUIREMENTS_PATH)}"

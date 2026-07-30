@@ -543,7 +543,7 @@ class AutoDS:
                 recorder.emit("run_started")
                 config: RunnableConfig = {
                     "recursion_limit": max(
-                        1, int(os.getenv("AUTODS_RECURSION_LIMIT") or 800)
+                        1, int(os.getenv("AUTODS_RECURSION_LIMIT") or 200)
                     ),
                     "configurable": {"thread_id": session.id},
                     "callbacks":  [langfuse_handler]
