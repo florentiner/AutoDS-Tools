@@ -119,8 +119,11 @@ class AutoDSAgent(BaseInstalledAgent):
             "curl -LsSf https://astral.sh/uv/install.sh | sh; "
             '. "$HOME/.local/bin/env" 2>/dev/null || export PATH="$HOME/.local/bin:$PATH"; '
             "uv python install 3.12; "
-            f"uv venv {shlex.quote(INSTALL_VENV)} --python 3.12 --seed; "
-            f"printf '%s\\n' \"$AUTODS_INSTALL_SPEC\" > {shlex.quote(INSTALL_REQUIREMENTS_PATH)}; "
+            # --system-site-packages: task images ship their own data-science stack
+            # in the system interpreter; the agent venv must be able to import it.
+            f"uv venv {shlex.quote(INSTALL_VENV)} --python 3.12 --seed --system-site-packages; "
+            # One requirement per line (the spec may list several packages).
+            f"printf '%s\\n' \"$AUTODS_INSTALL_SPEC\" | tr ' ' '\\n' | sed '/^$/d' > {shlex.quote(INSTALL_REQUIREMENTS_PATH)}; "
             f"{shlex.quote(INSTALL_VENV + '/bin/pip')} install -r {shlex.quote(INSTALL_REQUIREMENTS_PATH)}"
         )
         await self.exec_as_agent(environment, command=install, env={"AUTODS_INSTALL_SPEC": spec})
