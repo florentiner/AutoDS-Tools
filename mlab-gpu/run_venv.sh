@@ -43,7 +43,9 @@ build_agent_venv() {
   "$AGENT/bin/autods-harbor" --help >/dev/null 2>&1 || { echo "autods-harbor entrypoint missing" >&2; exit 1; }
 }
 build_family_venv() {
-  local fam="$1" venv="$HERE/.venv-$fam"; [ -x "$venv/bin/python" ] && return 0
+  local fam="$1"
+  local venv="$HERE/.venv-$fam"
+  [ -x "$venv/bin/python" ] && return 0
   echo ">> $fam child venv (torch: $([ "${TORCH_CPU:-0}" = 1 ] && echo CPU || echo GPU))"
   "$PY" -m venv "$venv"; "$venv/bin/pip" install -q --upgrade pip wheel "setuptools<81"
   local pk; pk="$(torch_pkgs "$fam")"
