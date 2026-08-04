@@ -59,11 +59,16 @@ _LIBRARY: dict[str, str] = {
 
 # Modality-agnostic discipline blocks (identical to the current C1 prompts).
 _DISCIPLINE = (
-    "## Hardware — use the GPU — REQUIRED\n"
-    "A CUDA GPU is available. Check `torch.cuda.is_available()` and, if true, move your\n"
-    "model and batches onto it (`model.to('cuda')`, `device='cuda'`) and train on the GPU —\n"
-    "do NOT train deep models on CPU. Pick batch sizes that use the GPU efficiently and\n"
-    "confirm training is on `cuda` (e.g. print the device).\n"
+    "## Hardware — use the accelerator — REQUIRED\n"
+    "Detect the accelerator and train on it — do NOT train deep models on CPU:\n"
+    "```python\n"
+    "import torch\n"
+    "device = ('cuda' if torch.cuda.is_available()\n"
+    "          else 'mps' if torch.backends.mps.is_available() else 'cpu')\n"
+    "```\n"
+    "Move the model and every batch to `device` (`model.to(device)`, `x.to(device)`), pick\n"
+    "batch sizes that keep it busy, and print the resolved device so the log shows it.\n"
+    "On `mps` keep dtypes float32 (float64 is unsupported) and prefer plain PyTorch ops.\n"
     "\n"
     "## Training discipline — REQUIRED\n"
     "If your model trains iteratively (epochs / rounds / trees), do NOT stop after an\n"
