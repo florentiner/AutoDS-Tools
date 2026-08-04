@@ -83,7 +83,8 @@ run_one() {  # $1=task $2=base|c1
       AUTODS_MODEL="$AUTODS_MODEL" AUTODS_API_KEY="$AUTODS_API_KEY" AUTODS_BASE_URL="$AUTODS_BASE_URL" \
       "${extra[@]}" \
       "$AGENT/bin/autods-harbor" --instruction-file "$inst" \
-        --workspace "$run/workspace" --trace-out "$run/trace.json" 2>&1 | tee "$run/agent.log"
+        --workspace "$run/workspace" --trace-out "$run/trace.json" 2>&1 | tee "$run/agent.log" \
+    || echo ">> agent exited non-zero (scoring anyway)" | tee -a "$run/agent.log"
   echo ">> SCORE $task/$mode"
   "$HERE/.venv-$fam/bin/python" "$td/tests/score.py" \
       --submission "$run/workspace/submission.csv" --answer "$td/environment/data/answer.csv" \
