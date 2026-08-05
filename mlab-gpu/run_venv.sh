@@ -72,29 +72,9 @@ run_one() {  # $1=task $2=base|c1
   echo ">> PULL $task from $REPO_ID"
   local td; td="$(pull_task "$task")"
   [ -d "$td/environment/data" ] || { echo "no data at $td/environment/data (check --repo / task name)"; exit 1; }
+  local inst="$td/instruction.md"                      # base instruction for BOTH modes
   local run="$HERE/runs/$task-$mode"; rm -rf "$run"; mkdir -p "$run/workspace"
   cp -R "$td/environment/data/." "$run/workspace/"
-  # Base instruction for BOTH modes, plus a note about THIS machine's accelerator.
-  # The dataset stays hardware-neutral; the concrete device is a runtime fact.
-  local inst="$run/instruction.md"
-  cp "$td/instruction.md" "$inst"
-  local dev; dev="$("$HERE/.venv-$fam/bin/python" -c "
-import torch
-print('cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu')" 2>/dev/null || echo cpu)"
-  if [ "$dev" = mps ]; then
-    cat >> "$inst" <<'EOF'
-
-## Runtime environment — this machine
-**There is NO CUDA GPU here.** `torch.cuda.is_available()` is `False`; the accelerator
-is Apple **MPS**. Use it explicitly — do not write a CUDA-only device check, or your
-model silently trains on CPU and will be far too slow:
-
-```python
-device = torch.device("mps")          # this machine; CPU fallback is enabled
-```
-Move the model and every batch to it. Keep tensors float32 (MPS has no float64).
-EOF
-  fi
   echo ">> RUN $task/$mode (family=$fam)  $(date +%H:%M:%S)"
   # base = AutoDS without C1 (AUTODS_C1_DISABLED=1); c1 = AutoDS appends its C1 layer at runtime
   local extra=(RESEARCH_DISABLED=1)
