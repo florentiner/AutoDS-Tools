@@ -87,7 +87,11 @@ run_one() {  # $1=task $2=base|c1
   # base = AutoDS without C1 (AUTODS_C1_DISABLED=1); c1 = AutoDS appends its C1 layer at runtime
   local extra=(RESEARCH_DISABLED=1)
   [ "$mode" = base ] && extra+=(DEBUGGER_DISABLED=1 AUTODS_C1_DISABLED=1) || extra+=(AUTODS_SUBMISSION_GUARD=1)
-  env AUTODS_CHILD_VENV="$HERE/.venv-$fam" \
+  # LightAutoML pulls LightGBM/CatBoost, which ship their own OpenMP runtime; loaded next
+  # to torch's this aborts the process (libomp __kmp_abort_process). Allow the duplicate
+  # and cap threads so the two runtimes do not oversubscribe the CPU.
+  env KMP_DUPLICATE_LIB_OK=TRUE OMP_NUM_THREADS="${OMP_NUM_THREADS:-4}" \
+      AUTODS_CHILD_VENV="$HERE/.venv-$fam" \
       AUTODS_MODEL="$AUTODS_MODEL" AUTODS_API_KEY="$AUTODS_API_KEY" AUTODS_BASE_URL="$AUTODS_BASE_URL" \
       "${extra[@]}" \
       "$AGENT/bin/autods-harbor" --instruction-file "$inst" \
