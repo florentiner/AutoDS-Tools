@@ -25,10 +25,12 @@ _LIBRARY: dict[str, str] = {
         "automatic preprocessing — do **not** hand-roll separate boosting models; let\n"
         "LightAutoML's `TabularAutoML` preset do the model selection and blending. Give\n"
         "the target column the target role, fit on the training frame, predict on the\n"
-        "test frame. The API reference is staged at **`/opt/docs/lightautoml.md`** — you\n"
-        "**MUST read it (`cat /opt/docs/lightautoml.md`) BEFORE writing your solution**\n"
-        "and follow its signatures. You MAY also use the pre-installed **featuretools** /\n"
-        "**feature-engine** for feature engineering.\n"
+        "test frame. Check the API before writing code: read `/opt/docs/lightautoml.md` if it\n"
+        "exists, otherwise inspect the installed package itself (e.g.\n"
+        "`python -c \"from lightautoml.automl.presets.tabular_presets import TabularAutoML; help(TabularAutoML)\"`).\n"
+        "If an import or an API call fails, fix it — do **not** silently fall back to a plain\n"
+        "scikit-learn model; LightAutoML is installed and is the required approach here.\n"
+        "You MAY also use the pre-installed **featuretools** / **feature-engine**.\n"
     ),
     "vision": (
         "## Specialized library to use — REQUIRED\n"
