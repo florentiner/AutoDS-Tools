@@ -31,9 +31,10 @@ PY="${PYTHON:-python3}"; AGENT="$HERE/.venv-agent"; CACHE="$HERE/.data"
 REPO_ID="${REPO#https://huggingface.co/datasets/}"    # -> danil-e/harbor-datasets-mlab
 
 family_of() { case "$1" in
-  amp-parkinsons) echo tabular;; feedback) echo nlp;;
-  fathomnet|identify-contrails) echo vision;;
-  clrs) echo graph;;
+  amp-parkinsons|spaceship-titanic|house-price) echo tabular;;
+  feedback|imdb) echo nlp;;
+  fathomnet|identify-contrails|cifar10) echo vision;;
+  clrs|ogbn-arxiv) echo graph;;
   *) echo "unknown task $1" >&2; exit 1;; esac; }
 torch_pkgs() { case "$1" in vision) echo "torch==2.2.2 torchvision==0.17.2";; *) echo "torch==2.2.2";; esac; }
 
