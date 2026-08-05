@@ -38,7 +38,8 @@ build_agent_venv() {
   echo ">> agent-brain venv (from $REPO_ROOT/packages/autods + apps/harbor)"
   "$PY" -m venv "$AGENT"
   "$AGENT/bin/pip" install -q --upgrade pip wheel "setuptools<81"
-  "$AGENT/bin/pip" install -q "$REPO_ROOT/packages/autods" "$REPO_ROOT/apps/harbor" huggingface_hub
+  # editable: prompt/agent edits in this checkout take effect without rebuilding the venv
+  "$AGENT/bin/pip" install -q -e "$REPO_ROOT/packages/autods" -e "$REPO_ROOT/apps/harbor" huggingface_hub
   "$AGENT/bin/pip" install -q "$REPO_ROOT/packages/pygrad" fastembed || true
   "$AGENT/bin/autods-harbor" --help >/dev/null 2>&1 || { echo "autods-harbor entrypoint missing" >&2; exit 1; }
 }
