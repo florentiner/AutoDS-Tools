@@ -72,9 +72,16 @@ run_one() {  # $1=task $2=base|c1
   echo ">> PULL $task from $REPO_ID"
   local td; td="$(pull_task "$task")"
   [ -d "$td/environment/data" ] || { echo "no data at $td/environment/data (check --repo / task name)"; exit 1; }
-  local inst="$td/instruction.md"                      # base instruction for BOTH modes
   local run="$HERE/runs/$task-$mode"; rm -rf "$run"; mkdir -p "$run/workspace"
   cp -R "$td/environment/data/." "$run/workspace/"
+  # The dataset ships the base instruction. `harbor run` appends the AutoDS C1 layer
+  # inside AutoDSAgent.run(); this runner calls the entrypoint directly, so for mode=c1
+  # it must apply the same layer itself - otherwise "c1" is silently a baseline run.
+  local inst="$td/instruction.md"
+  if [ "$mode" = c1 ]; then
+    inst="$run/instruction.md"
+    "$AGENT/bin/python" -c "import sys; from autods_harbor import c1_prompt; open(sys.argv[2],'w').write(c1_prompt.augment(open(sys.argv[1]).read(), sys.argv[3]))" "$td/instruction.md" "$inst" "$fam"
+  fi
   echo ">> RUN $task/$mode (family=$fam)  $(date +%H:%M:%S)"
   # base = AutoDS without C1 (AUTODS_C1_DISABLED=1); c1 = AutoDS appends its C1 layer at runtime
   local extra=(RESEARCH_DISABLED=1)
