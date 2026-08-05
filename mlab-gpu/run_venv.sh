@@ -23,6 +23,8 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"; REPO_ROOT="$(cd "$HERE/.." && pwd)"
 REPO="${REPO:-https://huggingface.co/datasets/danil-e/harbor-datasets-mlab}"
 [ "${1:-}" = "--repo" ] && { REPO="$2"; shift 2; }
+LOCAL_DS="${LOCAL_DS:-}"
+[ "${1:-}" = "--local" ] && { LOCAL_DS="$2"; shift 2; }
 : "${AUTODS_MODEL:?set AUTODS_MODEL}"; : "${AUTODS_API_KEY:?set AUTODS_API_KEY}"
 : "${AUTODS_BASE_URL:=https://openrouter.ai/api/v1}"
 PY="${PYTHON:-python3}"; AGENT="$HERE/.venv-agent"; CACHE="$HERE/.data"
@@ -30,7 +32,9 @@ REPO_ID="${REPO#https://huggingface.co/datasets/}"    # -> danil-e/harbor-datase
 
 family_of() { case "$1" in
   amp-parkinsons) echo tabular;; feedback) echo nlp;;
-  fathomnet|identify-contrails) echo vision;; *) echo "unknown task $1" >&2; exit 1;; esac; }
+  fathomnet|identify-contrails) echo vision;;
+  clrs) echo graph;;
+  *) echo "unknown task $1" >&2; exit 1;; esac; }
 torch_pkgs() { case "$1" in vision) echo "torch==2.2.2 torchvision==0.17.2";; *) echo "torch==2.2.2";; esac; }
 
 build_agent_venv() {
@@ -70,11 +74,19 @@ PY
 run_one() {  # $1=task $2=base|c1
   local task="$1" mode="$2" fam; fam="$(family_of "$task")"
   build_agent_venv; build_family_venv "$fam"
-  echo ">> PULL $task from $REPO_ID"
-  local td; td="$(pull_task "$task")"
+  local td
+  if [ -n "$LOCAL_DS" ]; then
+    td="$LOCAL_DS/$task"
+    echo ">> LOCAL $task from $td"
+  else
+    echo ">> PULL $task from $REPO_ID"
+    td="$(pull_task "$task")"
+  fi
   [ -d "$td/environment/data" ] || { echo "no data at $td/environment/data (check --repo / task name)"; exit 1; }
   local run="$HERE/runs/$task-$mode"; rm -rf "$run"; mkdir -p "$run/workspace"
-  cp -R "$td/environment/data/." "$run/workspace/"
+  # stage the data WITHOUT the answer key - it must never be visible to the agent
+  ( cd "$td/environment/data" && find . -maxdepth 1 -mindepth 1 ! -name 'answer.*' \
+      -exec cp -R {} "$run/workspace/" \; )
   # The dataset ships the base instruction. `harbor run` appends the AutoDS C1 layer
   # inside AutoDSAgent.run(); this runner calls the entrypoint directly, so for mode=c1
   # it must apply the same layer itself - otherwise "c1" is silently a baseline run.
@@ -97,9 +109,12 @@ run_one() {  # $1=task $2=base|c1
       "$AGENT/bin/autods-harbor" --instruction-file "$inst" \
         --workspace "$run/workspace" --trace-out "$run/trace.json" 2>&1 | tee "$run/agent.log" \
     || echo ">> agent exited non-zero (scoring anyway)" | tee -a "$run/agent.log"
-  echo ">> SCORE $task/$mode"
+  # the answer key is answer.csv for most tasks, answer.npz where arrays are scored
+  local ANSWER="$td/environment/data/answer.csv"
+  [ -f "$ANSWER" ] || ANSWER="$td/environment/data/answer.npz"
+  echo ">> SCORE $task/$mode (answer: $(basename "$ANSWER"))"
   "$HERE/.venv-$fam/bin/python" "$td/tests/score.py" \
-      --submission "$run/workspace/submission.csv" --answer "$td/environment/data/answer.csv" \
+      --submission "$run/workspace/submission.csv" --answer "$ANSWER" \
       --reward-json "$run/reward.json" | tee "$run/score.txt"
 }
 
