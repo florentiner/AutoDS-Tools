@@ -62,6 +62,10 @@ _LIBRARY: dict[str, str] = {
         "to the majority answer: make sure information can flow through the intermediate\n"
         "nodes the quantity actually depends on, and check that your predictions are not\n"
         "(nearly) constant across pairs.\n"
+        "A pointer target is usually CONSTRAINED: the answer for a pair can only be a node\n"
+        "that is actually connected to the endpoint. Mask the impossible candidates out\n"
+        "before the softmax, and verify that none of your predictions violates the\n"
+        "constraint — predicting unreachable nodes wastes most of the model's capacity.\n"
         "Consult the PyG docs (staged under `/opt/docs/` if present) for exact APIs.\n"
     ),
     "nlp": (
