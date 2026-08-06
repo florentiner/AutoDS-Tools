@@ -57,6 +57,11 @@ _LIBRARY: dict[str, str] = {
         "Use **PyTorch Geometric (torch_geometric)** (pre-installed) to build a real GNN\n"
         "(e.g. GCN / GraphSAGE / GAT) over the provided node features and edge index — do\n"
         "**not** ignore the graph structure and train a plain MLP on node features alone.\n"
+        "If the target is defined per node PAIR (i, j) rather than per node, note that a\n"
+        "score built only from two node embeddings usually cannot express it and collapses\n"
+        "to the majority answer: make sure information can flow through the intermediate\n"
+        "nodes the quantity actually depends on, and check that your predictions are not\n"
+        "(nearly) constant across pairs.\n"
         "Consult the PyG docs (staged under `/opt/docs/` if present) for exact APIs.\n"
     ),
     "nlp": (
@@ -104,7 +109,8 @@ _DISCIPLINE = (
     "the TASK'S OWN metric — per-target median / most-frequent class, or the training mean —\n"
     "and print both numbers. If your trained model does not beat the trivial predictor, do\n"
     "not submit the model: fix it, or submit the simpler predictor that actually scores\n"
-    "better.\n"
+    "better. Merely MATCHING the trivial score is also a failure — it means the model\n"
+    "collapsed onto the majority answer; change the approach rather than submitting it.\n"
     "Think about what the metric rewards, not just about fitting the data. For example\n"
     "SMAPE applies its maximum penalty whenever the true value is 0 and your prediction is\n"
     "non-zero — however small — so for a target that is often exactly 0, predicting exactly\n"
